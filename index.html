@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#C8325A">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="LGS Kampı">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}</style>
+<title>LGS Çalışma Kampı</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: tek sütun "optik form" kâğıdı; sekmeler üstte, kabarcıklar (bubble) seri ve hedef göstergesi */
+:root{
+  --paper:#FBF8F6; --sheet:#FFFFFF; --ink:#1F1D24; --muted:#6B6570; --line:#EAD9DE;
+  --accent:#C8325A; --accent-soft:#F7E1E7; --good:#2E8B57; --warn:#C98A12;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#16141A; --sheet:#211E26; --ink:#F1ECEF; --muted:#A39BA6; --line:#3A3240;
+  --accent:#F06C8E; --accent-soft:#3D2230; --good:#5BC48A; --warn:#E8B04A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#16141A; --sheet:#211E26; --ink:#F1ECEF; --muted:#A39BA6; --line:#3A3240;
+  --accent:#F06C8E; --accent-soft:#3D2230; --good:#5BC48A; --warn:#E8B04A; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:560px;margin:0 auto;padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:1.6rem;font-weight:800}
+h2{font-size:1.15rem;font-weight:700}
+.label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.count{text-align:right}
+.count .big{font-family:var(--mono);font-size:2.2rem;font-weight:700;color:var(--accent);line-height:1}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.lvl{display:flex;align-items:center;gap:12px}
+.badge{flex:none;width:52px;height:52px;border-radius:50%;border:2.5px solid var(--accent);display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:1.25rem;color:var(--accent)}
+.bar{height:10px;background:var(--accent-soft);border-radius:99px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .5s}
+.grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.row{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.bubbles{display:flex;gap:6px;flex-wrap:wrap}
+.bub{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-size:.68rem;font-family:var(--mono);color:var(--muted)}
+.bub.on{background:var(--accent);border-color:var(--accent);color:var(--sheet)}
+.bub.today{outline:2px dashed var(--accent);outline-offset:2px}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:4px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+.tabs button{font:600 .8rem var(--body);border:0;background:transparent;color:var(--muted);padding:9px 4px;border-radius:9px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);color:#fff}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.goal{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.goal:first-of-type{border-top:0}
+.goal .gb{flex:none;width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-weight:700;color:var(--sheet)}
+.goal.done .gb{background:var(--good);border-color:var(--good)}
+.goal .gt{flex:1;min-width:0}
+.goal small{color:var(--muted);display:block}
+.tip{background:var(--accent-soft);border-radius:10px;padding:12px;font-size:.92rem}
+.tip b{color:var(--accent)}
+.btn{font:700 1rem var(--body);border:0;border-radius:12px;padding:13px 18px;cursor:pointer;background:var(--accent);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn:disabled{opacity:.5;cursor:default}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btns .btn{flex:1}
+.timer{font-family:var(--mono);font-size:4.2rem;font-weight:700;text-align:center;line-height:1;letter-spacing:-.02em;padding:8px 0}
+.ring{position:relative;width:min(260px,100%);aspect-ratio:1;margin:0 auto;max-width:100%}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .in{position:absolute;inset:0;display:grid;place-items:center;align-content:center}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:600 .85rem var(--body);border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:99px;padding:6px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted);font-weight:600}
+input,select{font:500 1rem var(--body);padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);width:100%}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:130px}
+.week .col{display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.week .b{width:100%;max-width:28px;background:var(--accent);border-radius:6px 6px 2px 2px;min-height:2px}
+.week .b.zero{background:var(--line)}
+.week span{font-size:.7rem;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+td,th{padding:7px 4px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td.r,th.r{text-align:right}
+.reward{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.reward:first-of-type{border-top:0}
+.reward .lv{flex:none;width:46px;height:46px;border-radius:50%;border:2px dashed var(--line);display:grid;place-items:center;font-family:var(--mono);font-weight:700;color:var(--muted)}
+.reward.open .lv{border:2px solid var(--good);color:var(--good)}
+.reward.got .lv{background:var(--good);color:var(--sheet);border-color:var(--good)}
+.reward input{padding:7px 9px;font-size:.92rem}
+.reward .rt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.mini{font:600 .8rem var(--body);border:0;background:var(--good);color:#fff;border-radius:8px;padding:7px 10px;cursor:pointer;flex:none}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-weight:600;z-index:20;max-width:calc(100% - 32px);text-align:center}
+.muted{color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(20,16,24,.55);z-index:30;display:grid;place-items:center;padding:20px max(16px,env(safe-area-inset-left,0px))}
+.modal .sheet{width:100%;max-width:440px}
+.moods{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.mood{font:600 .95rem var(--body);border:1.5px solid var(--line);background:var(--paper);color:var(--ink);border-radius:12px;padding:12px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+.mood span{font-size:1.7rem;line-height:1}
+.mood:hover{border-color:var(--accent)}
+.moodline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.linkbtn{font:600 .85rem var(--body);background:none;border:0;color:var(--accent);cursor:pointer;padding:0;text-decoration:underline}
+.q{display:flex;flex-direction:column;gap:8px;padding:14px 0;border-top:1px solid var(--line)}
+.q:first-of-type{border-top:0;padding-top:0}
+.q .qs{font-weight:600}
+.opt{font:500 .95rem var(--body);text-align:left;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);border-radius:10px;padding:10px 12px;cursor:pointer;display:flex;gap:10px;align-items:center}
+.opt b{flex:none;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-size:.8rem}
+.opt.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent)}
+.opt.right b{background:var(--good);border-color:var(--good);color:#fff}
+.opt.wrong{border-color:var(--accent);background:var(--accent-soft)}
+.opt.wrong b{background:var(--accent);border-color:var(--accent);color:#fff}
+.opt:disabled{cursor:default}
+.expl{font-size:.88rem;color:var(--muted)}
+.opt.sel{border-color:var(--ink);background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.opt.sel b{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+.lvrow{display:grid;grid-template-columns:84px 1fr 92px;gap:10px;align-items:center;font-size:.9rem}
+.lvrow .bar{height:8px}
+.pill{font-size:.72rem;font-weight:700;padding:3px 8px;border-radius:99px;text-align:center}
+.pill.low{background:var(--accent-soft);color:var(--accent)}
+.pill.mid{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.pill.high{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+.qnum{font-family:var(--mono);color:var(--muted);font-size:.8rem}
+.badq{font:500 .78rem var(--body);background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;padding:0;align-self:flex-start}
+.q.flag{opacity:.5}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.foot{font-size:.8rem;color:var(--muted);text-align:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head><body>
+
+
+<div class="wrap" lang="tr">
+  <header class="top">
+    <div>
+      <div class="label">LGS 2027 hazırlık</div>
+      <h1>Çalışma Kampı</h1>
+    </div>
+    <div class="count"><div class="big num" id="daysLeft">–</div><div class="label">gün kaldı</div></div>
+  </header>
+
+  <section class="sheet">
+    <div class="lvl">
+      <div class="badge" id="lvlNum">1</div>
+      <div class="grow">
+        <div class="row"><strong id="lvlName">Çaylak</strong><span class="num muted" id="xpText">0 XP</span></div>
+        <div class="bar"><i id="xpBar" style="width:0%"></i></div>
+        <small class="muted" id="nextReward"></small>
+      </div>
+    </div>
+    <div class="row"><span class="label">Son 7 gün · seri</span><strong class="num" id="streak">0 gün 🔥</strong></div>
+    <div class="bubbles" id="streakBubbles"></div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="today">Bugün</button>
+    <button role="tab" aria-selected="false" data-tab="quiz">Test</button>
+    <button role="tab" aria-selected="false" data-tab="focus">Sayaç</button>
+    <button role="tab" aria-selected="false" data-tab="solve">Kayıt</button>
+    <button role="tab" aria-selected="false" data-tab="rewards">Ödüller</button>
+  </nav>
+
+  <!-- BUGÜN -->
+  <section id="tab-today" class="tabpane" style="display:flex;flex-direction:column;gap:16px">
+    <div class="sheet" id="moodCard">
+      <div class="moodline"><span style="font-size:1.8rem" id="moodEmoji">🙂</span><div class="grow"><strong id="moodTitle">Bugün nasılsın?</strong><small class="muted" id="moodMsg"></small></div></div>
+      <button class="linkbtn" id="moodChange" type="button">Ruh halimi değiştir</button>
+    </div>
+    <div class="sheet">
+      <div class="row"><h2>Bugünkü hedeflerin</h2><span class="label" id="dayType"></span></div>
+      <div id="goals"></div>
+    </div>
+    <div class="tip" id="coach"></div>
+    <div class="sheet" id="weakToday"></div>
+    <div class="sheet">
+      <div class="row"><h2>Bu hafta çalışma süresi</h2><span class="num muted" id="weekTotal"></span></div>
+      <div class="week" id="weekChart"></div>
+    </div>
+    <div class="sheet">
+      <h2>Bu hafta derslere göre</h2>
+      <div style="overflow-x:auto"><table><thead><tr><th>Ders</th><th class="r">Dakika</th><th class="r">Soru</th><th class="r">Net</th></tr></thead><tbody id="subjTable"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- TEST -->
+  <section id="tab-quiz" class="tabpane" hidden style="flex-direction:column;gap:16px">
+    <div class="sheet" id="levelBox" hidden></div>
+    <div class="sheet" id="denemeBox"></div>
+    <div class="sheet" id="weakTest"></div>
+    <div class="sheet">
+      <div class="row"><h2>Günün testi</h2><span class="num muted" id="quizScore"></span></div>
+      <small class="muted">Her gün her dersten 1 yeni soru, 20 gün boyunca tekrar yok. Her doğru +10 XP.</small>
+      <div id="quizList"></div>
+    </div>
+    <div class="sheet">
+      <h2>Çıkmış LGS soruları</h2>
+      <small class="muted">Geçmiş yılların gerçek sorularını ve cevap anahtarlarını MEB'in resmî sitesinden çöz. Çözdükten sonra sonucunu Kayıt sekmesine yazmayı unutma, deneme olarak XP kazanırsın.</small>
+      <div class="btns"><a class="btn" style="text-align:center;text-decoration:none" href="https://odsgm.meb.gov.tr" target="_blank" rel="noopener">MEB sınav sayfasını aç</a></div>
+    </div>
+  </section>
+
+  <!-- SAYAÇ -->
+  <section id="tab-focus" class="tabpane" hidden style="flex-direction:column;gap:16px">
+    <div class="sheet">
+      <span class="label">Hangi derse çalışıyorsun?</span>
+      <div class="chips" id="focusSubj"></div>
+      <div class="ring">
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="var(--accent-soft)" stroke-width="6"/><circle id="ringArc" cx="50" cy="50" r="45" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-dasharray="282.7" stroke-dashoffset="0"/></svg>
+        <div class="in"><div class="timer" id="timer">25:00</div><div class="label" id="phase">Odak zamanı</div></div>
+      </div>
+      <div class="btns">
+        <button class="btn" id="startBtn">Başlat</button>
+        <button class="btn ghost" id="resetBtn">Sıfırla</button>
+      </div>
+      <small class="muted">25 dakika odak = 50 XP. Telefonu ters çevir, bildirimleri kapat. Bitince 5 dakika mola.</small>
+    </div>
+  </section>
+
+  <!-- SORU -->
+  <section id="tab-solve" class="tabpane" hidden style="flex-direction:column;gap:16px">
+    <form class="sheet" id="solveForm">
+      <h2>Çözdüğün soruları kaydet</h2>
+      <span class="label">Ders</span>
+      <div class="chips" id="solveSubj"></div>
+      <div class="grid3">
+        <label class="f">Doğru<input id="inD" type="number" min="0" inputmode="numeric" placeholder="0"></label>
+        <label class="f">Yanlış<input id="inY" type="number" min="0" inputmode="numeric" placeholder="0"></label>
+        <label class="f">Boş<input id="inB" type="number" min="0" inputmode="numeric" placeholder="0"></label>
+      </div>
+      <div class="row"><span class="muted">Net (3 yanlış 1 doğruyu götürür)</span><strong class="num" id="netPrev">0,00</strong></div>
+      <button class="btn" type="submit">Kaydet</button>
+    </form>
+    <div class="sheet">
+      <h2>Son kayıtlar</h2>
+      <div style="overflow-x:auto"><table><thead><tr><th>Tarih</th><th>Ders</th><th class="r">D/Y/B</th><th class="r">Net</th></tr></thead><tbody id="solveList"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ÖDÜLLER -->
+  <section id="tab-rewards" class="tabpane" hidden style="flex-direction:column;gap:16px">
+    <div class="tip"><b>Ödül merdiveni.</b> Seviye atladıkça yeni ödülün açılır. Ödülleri ailenle birlikte konuş; istersen yazıya dokunup değiştirebilirsin. Açılan ödülü aldığında "Aldım" de.</div>
+    <div class="sheet" id="rewardList"></div>
+    <div class="sheet">
+      <h2>Rozetler</h2>
+      <div id="badgeList"></div>
+    </div>
+    <div class="sheet">
+      <h2>Ayarlar</h2>
+      <label class="f">Sınav tarihi (MEB açıklayınca güncelle)<input type="date" id="examDate"></label>
+    </div>
+  </section>
+
+  <p class="foot">Veriler bu telefonda saklanır. Aynı cihaz ve tarayıcıdan açmaya devam et.</p>
+</div>
+
+<div class="modal" id="moodModal" lang="tr" hidden>
+  <div class="sheet">
+    <div class="label" id="greet">Günaydın</div>
+    <h2>Bugün nasılsın?</h2>
+    <small class="muted">Dürüst ol, bugünkü hedeflerini buna göre ayarlayacağım.</small>
+    <div class="moods" id="moodBtns"></div>
+  </div>
+</div>
+
+<script>
+const SUBJ=[
+  {k:'tr',n:'Türkçe',q:20},{k:'mat',n:'Matematik',q:20},{k:'fen',n:'Fen',q:20},
+  {k:'ink',n:'İnkılap',q:10},{k:'din',n:'Din',q:10},{k:'ing',n:'İngilizce',q:10}];
+const SN=Object.fromEntries(SUBJ.map(s=>[s.k,s.n]));
+const LEVELNAMES=['Çaylak','Çaylak','Azimli','Odaklı','Çalışkan','Kararlı','Usta','Uzman','Şampiyon','Efsane','Efsane'];
+const DEFAULT_REWARDS=[
+  {l:2,t:'Sevdiğin tatlı veya atıştırmalık'},
+  {l:3,t:'Bir akşam istediğin yemek sipariş edilsin'},
+  {l:5,t:'Arkadaşlarla sinema veya kafe günü'},
+  {l:7,t:'Seçtiğin bir kitap veya oyun'},
+  {l:10,t:'Bir gün boyunca ders yok, tam serbest gün'},
+  {l:13,t:'Uzun süredir istediğin bir eşya'},
+  {l:16,t:'Ailece bir gün gezisi'},
+  {l:20,t:'Sınav sonrası büyük ödül (aileyle kararlaştırın)'}];
+const KEY='lgs-kampi-v1';
+let S;
+function load(){try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
+  if(!S)S={xp:0,sessions:[],solves:[],examDate:'2027-06-13',rewards:DEFAULT_REWARDS,claimed:[],bonus:[]};
+  S.moods=S.moods||{};S.quiz=S.quiz||{};}
+
+const MOODS=[
+  {k:'harika',e:'🤩',n:'Harika',msgs:[
+    'Bu enerjiyi iyi kullan! Bugün zor bir konuya saldırmak için mükemmel gün.',
+    'Süpersin! Bugün kendini biraz zorla, akşam gurur duyacaksın.',
+    'Böyle günler altın değerinde. Hedefleri geçmeye ne dersin?']},
+  {k:'iyi',e:'🙂',n:'İyi',msgs:[
+    'Güzel! Sakin ve istikrarlı çalışmak sınavı kazandırır.',
+    'İyi bir gün, iyi bir başlangıç. Bir seansla ısın, gerisi gelir.',
+    'Her gün biraz, sınav günü çok. Hadi başlayalım.']},
+  {k:'yorgun',e:'😴',n:'Yorgunum',light:true,msgs:[
+    'Yorgun olman normal. Bugün hedeflerini hafiflettim, kısa ama düzenli çalışalım.',
+    'Bugün az da olsa çalışman seriyi korur. Önce bir bardak su iç, sonra 1 seans.',
+    'Dinlenmek de çalışmanın parçası. Bugün hafif bir gün, ama sıfır değil.']},
+  {k:'stresli',e:'😟',n:'Stresliyim',light:true,msgs:[
+    'Derin bir nefes al. Sınav bir maraton, bugün sadece küçük bir adım atacağız. Hedefleri hafiflettim.',
+    'Stres, önemsediğini gösterir. Bugün tek bir konuya odaklan, yeter.',
+    'Herkes bazen gerilir. Kısa bir seans yap, sonra sevdiğin bir şeyle mola ver.']},
+  {k:'isteksiz',e:'😕',n:'Canım istemiyor',light:true,msgs:[
+    'Anlıyorum. Sadece 1 seans aç: başlamak en zor kısım, sonra kolaylaşır. Hedefleri hafiflettim.',
+    'Motivasyon bazen işe başladıktan sonra gelir. 25 dakika dene, sonra karar ver.',
+    'Bugün az yapsan da serin devam eder. Küçük kazanımlar büyük sonuç getirir.']}];
+const pick=(arr,seed)=>arr[seed%arr.length];
+const daySeed=()=>{const d=new Date();return d.getFullYear()*400+d.getMonth()*31+d.getDate()};
+
+// Günün testi: özgün, 8. sınıf müfredatına uygun sorular. a = doğru şıkkın sırası (0'dan)
+const QB={
+ mat:[
+  {s:'2³ · 2⁴ işleminin sonucu kaçtır?',o:['64','128','256','2¹²'],a:1,e:'Tabanlar aynıyken üsler toplanır: 2⁷ = 128.'},
+  {s:'√48 ifadesinin en sade hali hangisidir?',o:['3√4','6√2','4√3','12√2'],a:2,e:'48 = 16·3, √16 = 4 olduğu için 4√3.'},
+  {s:'24 ile 36 sayılarının EBOB\'u kaçtır?',o:['6','8','12','72'],a:2,e:'İkisini de tam bölen en büyük sayı 12\'dir.'},
+  {s:'Bir torbada 3 kırmızı, 5 mavi top var. Rastgele çekilen topun kırmızı olma olasılığı nedir?',o:['3/5','3/8','5/8','1/3'],a:1,e:'İstenen durum 3, tüm durumlar 3+5 = 8.'},
+  {s:'(x + 3)² ifadesinin açılımı hangisidir?',o:['x² + 9','x² + 3x + 9','x² + 6x + 9','2x + 6'],a:2,e:'(a+b)² = a² + 2ab + b² → x² + 6x + 9.'},
+  {s:'2x − 5 = 11 denkleminde x kaçtır?',o:['3','6','8','16'],a:2,e:'2x = 16, x = 8.'},
+  {s:'0,0005 sayısının bilimsel gösterimi hangisidir?',o:['5 · 10⁻³','5 · 10⁻⁴','5 · 10⁴','0,5 · 10⁻³'],a:1,e:'Virgül 4 basamak sağa kayar: 5 · 10⁻⁴.'}],
+ fen:[
+  {s:'Dünya\'da mevsimlerin oluşmasının temel nedeni nedir?',o:['Dünya\'nın Güneş\'e uzaklığının değişmesi','Dünya\'nın eksen eğikliği ve Güneş etrafında dolanması','Ay\'ın Dünya etrafında dolanması','Dünya\'nın kendi etrafında dönmesi'],a:1,e:'Eksen eğikliği yüzünden güneş ışınlarının geliş açısı yıl içinde değişir.'},
+  {s:'DNA\'nın yapı birimine ne ad verilir?',o:['Gen','Kromozom','Nükleotit','Protein'],a:2,e:'DNA, nükleotit adı verilen birimlerin art arda dizilmesiyle oluşur.'},
+  {s:'Ağırlığı değişmeyen bir cismin yere temas eden yüzey alanı artırılırsa katı basıncı ne olur?',o:['Artar','Azalır','Değişmez','Önce artar sonra azalır'],a:1,e:'Basınç = Kuvvet / Yüzey alanı. Alan artarsa basınç azalır.'},
+  {s:'pH değeri 2 olan bir madde için ne söylenebilir?',o:['Kuvvetli asittir','Nötrdür','Bazdır','Tuzdur'],a:0,e:'pH 7\'den küçükse asit, 7\'ye ne kadar uzaksa o kadar kuvvetlidir.'},
+  {s:'Sabit makara için hangisi doğrudur?',o:['Kuvvetten kazanç sağlar','Yoldan kazanç sağlar','Kuvvetin yönünü değiştirir, kuvvetten kazanç sağlamaz','İşten kazanç sağlar'],a:2,e:'Sabit makarada yük ile kuvvet eşittir; sadece yön değişir.'},
+  {s:'Fotosentez sonucunda havaya verilen gaz hangisidir?',o:['Karbondioksit','Azot','Oksijen','Hidrojen'],a:2,e:'Bitkiler karbondioksit alır, besin üretir ve oksijen verir.'},
+  {s:'Bir maddenin hal değiştirirken sıcaklığı için ne söylenebilir? (saf madde)',o:['Sürekli artar','Sabit kalır','Sürekli azalır','Önce düşer sonra artar'],a:1,e:'Saf maddeler hal değiştirirken sıcaklık sabit kalır.'}],
+ tr:[
+  {s:'"Koşarak eve geldi." cümlesindeki "koşarak" kelimesi hangi fiilimsidir?',o:['İsim-fiil','Sıfat-fiil','Zarf-fiil','Çekimli fiil'],a:2,e:'-arak eki zarf-fiil (bağ-fiil) ekidir; nasıl geldiğini anlatır.'},
+  {s:'Hangi cümlede "ağır" kelimesi mecaz anlamda kullanılmıştır?',o:['Bu çanta çok ağır.','Ağır kutuyu birlikte taşıdık.','Söylediği söz bana çok ağır geldi.','Demir, tahtadan ağırdır.'],a:2,e:'Söz için kullanılan "ağır" kırıcı anlamındadır; gerçek ağırlık değildir.'},
+  {s:'Hangi yazım doğrudur?',o:['herşey','her şey','herkez','birşey'],a:1,e:'"Her şey" ve "bir şey" ayrı yazılır; doğrusu "herkes"tir.'},
+  {s:'"Kitap okumayı çok seviyorum." cümlesindeki fiilimsi hangisidir?',o:['Kitap','okumayı','çok','seviyorum'],a:1,e:'"okuma" isim-fiildir (-ma eki).'},
+  {s:'"Damlaya damlaya göl olur." atasözünün anlamı nedir?',o:['Yağmur çok yağınca göl oluşur.','Küçük birikimler zamanla büyük sonuç verir.','Acele eden işini bozar.','Su her şeydir.'],a:1,e:'Her gün biraz çalışmak da sınavda büyük fark yaratır!'},
+  {s:'"Dün akşam kitabını bitirdi Ali." cümlesinin yüklemi hangisidir?',o:['Ali','Dün akşam','kitabını','bitirdi'],a:3,e:'Devrik cümle de olsa yüklem çekimli fiil olan "bitirdi"dir.'},
+  {s:'Hangi cümlede sebep-sonuç ilişkisi vardır?',o:['Yağmur yağdığı için maç ertelendi.','Akşam sinemaya gideceğiz.','Kitabı masaya bıraktı.','Bahçede çiçekler açmış.'],a:0,e:'"-dığı için" sebep bildirir; maçın ertelenmesi sonuçtur.'}],
+ ink:[
+  {s:'Mustafa Kemal hangi şehirde doğmuştur?',o:['İstanbul','Selanik','Manastır','Ankara'],a:1,e:'Mustafa Kemal 1881\'de Selanik\'te doğdu.'},
+  {s:'Kurtuluş Savaşı\'nın gerekçesi, amacı ve yöntemi ilk kez hangi belgede belirtilmiştir?',o:['Amasya Genelgesi','Misak-ı Millî','Sivas Kongresi','Erzurum Kongresi'],a:0,e:'Amasya Genelgesi (Haziran 1919) bu üç unsuru ilk kez ortaya koydu.'},
+  {s:'TBMM hangi tarihte açılmıştır?',o:['19 Mayıs 1919','23 Nisan 1920','30 Ağustos 1922','29 Ekim 1923'],a:1,e:'TBMM 23 Nisan 1920\'de Ankara\'da açıldı.'},
+  {s:'Sakarya Meydan Muharebesi\'nden sonra Mustafa Kemal\'e TBMM tarafından ne verilmiştir?',o:['Başkomutanlık','Gazi unvanı ve mareşal rütbesi','Cumhurbaşkanlığı','Atatürk soyadı'],a:1,e:'Sakarya zaferinden sonra Gazi unvanı ve mareşal rütbesi verildi.'},
+  {s:'Misak-ı Millî hangi mecliste kabul edilmiştir?',o:['TBMM','Son Osmanlı Mebusan Meclisi','Sivas Kongresi','Kurucu Meclis'],a:1,e:'Ocak 1920\'de Son Osmanlı Mebusan Meclisi\'nde kabul edildi.'},
+  {s:'Mudanya Ateşkes Antlaşması hangi zaferden sonra imzalanmıştır?',o:['Sakarya','I. İnönü','Büyük Taarruz','Kütahya-Eskişehir'],a:2,e:'Büyük Taarruz\'un kazanılmasıyla Ekim 1922\'de imzalandı.'},
+  {s:'Cumhuriyet hangi tarihte ilan edilmiştir?',o:['23 Nisan 1920','24 Temmuz 1923','29 Ekim 1923','3 Mart 1924'],a:2,e:'Cumhuriyet 29 Ekim 1923\'te ilan edildi.'}],
+ din:[
+  {s:'Maddi durumu yeterli olan Müslümanın malının belli bir kısmını ihtiyaç sahiplerine vermesine ne denir?',o:['Hac','Zekât','Kurban','Oruç'],a:1,e:'Zekât, malî bir ibadettir.'},
+  {s:'Kur\'an-ı Kerim\'in ilk suresi (sıralamada) hangisidir?',o:['Bakara','İhlâs','Fâtiha','Yâsin'],a:2,e:'Mushaf sıralamasında ilk sure Fâtiha\'dır.'},
+  {s:'Allah\'ın evrendeki her şeyi bir ölçü ve düzen içinde yaratmasına ne denir?',o:['Kader','Kaza','Tevekkül','Ecel'],a:0,e:'Kader, Allah\'ın her şeyi bir ölçüye göre takdir etmesidir.'},
+  {s:'Hz. Muhammed\'in hicret ettiği şehir hangisidir?',o:['Mekke','Taif','Medine','Kudüs'],a:2,e:'622 yılında Mekke\'den Medine\'ye hicret edildi.'},
+  {s:'Ramazan ayı sonunda bayramdan önce verilen sadakaya ne ad verilir?',o:['Fitre','Kurban','Zekât','Kefaret'],a:0,e:'Fitre (fıtır sadakası) bayram namazından önce verilir.'},
+  {s:'Hac ibadeti hangi şehirde yapılır?',o:['Medine','Mekke','Kudüs','Taif'],a:1,e:'Hac, Mekke\'deki Kâbe ve çevresinde yapılır.'},
+  {s:'Bir işi yapmak için gereken tüm çabayı gösterdikten sonra sonucu Allah\'a bırakmaya ne denir?',o:['Tevekkül','İsraf','Kibir','Gıybet'],a:0,e:'Tevekkül, önce çalışıp sonra sonucu Allah\'a bırakmaktır.'}],
+ ing:[
+  {s:'"Would you like to come to my party?" sorusunu kabul eden cevap hangisidir?',o:['Sorry, I can\'t.','Sure, I\'d love to.','No, I don\'t.','I\'m busy.'],a:1,e:'"I\'d love to" daveti kabul etmek için kullanılır.'},
+  {s:'"Sorry, I can\'t. I have to study for my exam." cümlesi ne amaçla kullanılır?',o:['Davet etmek','Daveti reddetmek','Özür kabul etmek','Tarif vermek'],a:1,e:'Bir daveti nazikçe reddedip sebebini söylüyor.'},
+  {s:'"First, chop the onions. Then, ___ them in oil." Boşluğa hangisi gelir?',o:['fry','sleep','read','drink'],a:0,e:'Yemek tarifinde soğanlar yağda kızartılır: fry.'},
+  {s:'"She is good ___ playing chess." Boşluğa hangisi gelir?',o:['in','on','at','of'],a:2,e:'"be good at" kalıbı kullanılır.'},
+  {s:'"Earthquake" kelimesinin Türkçesi nedir?',o:['Sel','Fırtına','Deprem','Yangın'],a:2,e:'Earthquake = deprem.'},
+  {s:'"I prefer tea ___ coffee." Boşluğa hangisi gelir?',o:['than','to','from','with'],a:1,e:'"prefer A to B" kalıbı kullanılır.'},
+  {s:'"Teenagers usually ___ time with their friends at weekends." Boşluğa hangisi gelir?',o:['spend','spends','spending','spent'],a:0,e:'Çoğul özne (teenagers) ve geniş zaman: spend.'}]};
+const QB2={
+ mat:[
+  {s:'3⁻² ifadesinin değeri kaçtır?',o:['−9','−6','1/9','1/6'],a:2,e:'Negatif üs, tabanın tersini alır: 3⁻² = 1/3² = 1/9.'},
+  {s:'√50 + √8 işleminin sonucu kaçtır?',o:['√58','5√2','7√2','9√2'],a:2,e:'√50 = 5√2, √8 = 2√2. Toplam 7√2.'},
+  {s:'18 sayısının kaç tane pozitif tam sayı böleni vardır?',o:['4','5','6','8'],a:2,e:'Bölenler: 1, 2, 3, 6, 9, 18. Toplam 6 tane.'},
+  {s:'12 ile 18 sayılarının EKOK\'u kaçtır?',o:['6','36','72','216'],a:1,e:'İkisinin de katı olan en küçük sayı 36\'dır.'},
+  {s:'Bir zar atıldığında üst yüze çift sayı gelme olasılığı nedir?',o:['1/6','1/3','1/2','2/3'],a:2,e:'Çift sayılar 2, 4, 6. Olasılık 3/6 = 1/2.'},
+  {s:'x² − 9 ifadesinin çarpanlarına ayrılmış hali hangisidir?',o:['(x − 3)²','(x − 3)(x + 3)','(x − 9)(x + 1)','(x + 3)²'],a:1,e:'İki kare farkı: a² − b² = (a − b)(a + b).'},
+  {s:'y = 2x + 1 doğrusunun eğimi kaçtır?',o:['1','2','−2','1/2'],a:1,e:'y = mx + n biçiminde m eğimdir: m = 2.'},
+  {s:'3(x − 2) = x + 4 denkleminde x kaçtır?',o:['1','3','5','7'],a:2,e:'3x − 6 = x + 4 → 2x = 10 → x = 5.'},
+  {s:'2x + 3 < 11 eşitsizliğinin çözümü hangisidir?',o:['x < 4','x > 4','x < 7','x > 7'],a:0,e:'2x < 8 → x < 4.'},
+  {s:'Dik kenarları 6 cm ve 8 cm olan dik üçgenin hipotenüsü kaç cm\'dir?',o:['10','12','14','48'],a:0,e:'Pisagor: 6² + 8² = 36 + 64 = 100, √100 = 10.'},
+  {s:'Yarıçapı 3 cm, yüksekliği 10 cm olan silindirin hacmi kaç cm³\'tür? (π = 3)',o:['90','180','270','900'],a:2,e:'Hacim = π·r²·h = 3·9·10 = 270.'},
+  {s:'10⁵ · 10⁻² işleminin sonucu kaçtır?',o:['10','100','1000','10⁻¹⁰'],a:2,e:'Üsler toplanır: 10³ = 1000.'},
+  {s:'Alanı 49 cm² olan karenin çevresi kaç cm\'dir?',o:['14','28','49','196'],a:1,e:'Bir kenar √49 = 7. Çevre 4·7 = 28.'}],
+ fen:[
+  {s:'DNA üzerinde bulunan ve bir özelliğin ortaya çıkmasını sağlayan bölüme ne denir?',o:['Gen','Nükleotit','Hücre zarı','Ribozom'],a:0,e:'Gen, belirli bir özelliği belirleyen DNA parçasıdır.'},
+  {s:'Mutasyon için hangisi doğrudur?',o:['Her zaman faydalıdır.','DNA\'da meydana gelen kalıcı değişimlerdir.','Çevre etkisiyle oluşan, kalıtsal olmayan değişimdir.','Sadece bitkilerde görülür.'],a:1,e:'Çevre etkisiyle oluşan kalıtsal olmayan değişim modifikasyondur.'},
+  {s:'Sıvı basıncı aşağıdakilerden hangisine bağlı DEĞİLDİR?',o:['Derinlik','Sıvının yoğunluğu','Kabın şekli','Yer çekimi'],a:2,e:'Sıvı basıncı derinlik ve yoğunluğa bağlıdır; kabın şekli etkilemez.'},
+  {s:'Periyodik tabloda aynı grupta bulunan elementler için ne söylenebilir?',o:['Kütleleri aynıdır.','Kimyasal özellikleri benzerdir.','Hepsi gazdır.','Proton sayıları aynıdır.'],a:1,e:'Aynı gruptaki elementlerin kimyasal özellikleri benzerdir.'},
+  {s:'Asit ile bazın tepkimeye girerek tuz ve su oluşturmasına ne denir?',o:['Erime','Nötrleşme','Buharlaşma','Yanma'],a:1,e:'Bu tepkimeye nötrleşme tepkimesi denir.'},
+  {s:'Tahterevallide destek noktası nerededir?',o:['Kuvvet ile yükün arasında','Yükün dışında','Kuvvetin dışında','Hiç yoktur'],a:0,e:'Tahterevalli, desteği ortada olan bir kaldıraçtır.'},
+  {s:'Hangisi ısı enerjisinin birimidir?',o:['Santigrat derece','Joule','Newton','Pascal'],a:1,e:'°C sıcaklığın, Newton kuvvetin, Pascal basıncın birimidir.'},
+  {s:'Hangisi bir besin zincirinde üretici canlıdır?',o:['Tavşan','Yeşil bitki','Mantar','Kartal'],a:1,e:'Yeşil bitkiler fotosentezle kendi besinini üretir. Mantar ayrıştırıcıdır.'},
+  {s:'Elektrik enerjisini hareket enerjisine dönüştüren araç hangisidir?',o:['Ampul','Elektrik motoru','Ütü','Pil'],a:1,e:'Ampul ışığa, ütü ısıya dönüştürür. Pil ise kimyasal enerjiden elektrik üretir.'},
+  {s:'Bir bölgede uzun yıllar boyunca görülen hava olaylarının ortalamasına ne denir?',o:['Hava durumu','İklim','Rüzgâr','Nem'],a:1,e:'Kısa süreli değişimler hava durumu, uzun yılların ortalaması iklimdir.'},
+  {s:'İnsanın vücut hücrelerinde kaç kromozom bulunur?',o:['23','44','46','48'],a:2,e:'Vücut hücrelerinde 46, üreme hücrelerinde 23 kromozom vardır.'},
+  {s:'Hangisi kimyasal bir değişimdir?',o:['Buzun erimesi','Kâğıdın yırtılması','Demirin paslanması','Suyun buharlaşması'],a:2,e:'Paslanmada yeni bir madde oluşur; diğerleri fiziksel değişimdir.'},
+  {s:'21 Haziran\'da Kuzey Yarım Küre\'de hangisi yaşanır?',o:['En uzun gece','En uzun gündüz','Gece ile gündüz eşitliği','Kış mevsiminin başlangıcı'],a:1,e:'21 Haziran Kuzey Yarım Küre\'de en uzun gündüzdür ve yaz başlar.'}],
+ tr:[
+  {s:'"Kitaplarını alıp okula gitti." cümlesindeki "alıp" kelimesi hangi fiilimsidir?',o:['İsim-fiil','Sıfat-fiil','Zarf-fiil','Çekimli fiil'],a:2,e:'-ıp eki zarf-fiil ekidir.'},
+  {s:'"Gelen misafirler çok mutluydu." cümlesindeki "gelen" kelimesi hangi fiilimsidir?',o:['İsim-fiil','Sıfat-fiil','Zarf-fiil','Çekimli fiil'],a:1,e:'-en eki sıfat-fiil ekidir; "misafirler"i niteler.'},
+  {s:'"Ali, sabah erkenden okula gitti." cümlesinde "sabah erkenden" hangi ögedir?',o:['Özne','Nesne','Zarf tümleci','Dolaylı tümleç'],a:2,e:'"Ne zaman?" sorusuna cevap verir: zarf tümleci.'},
+  {s:'"Kitabı masanın üstüne koydu." cümlesinde "masanın üstüne" hangi ögedir?',o:['Özne','Nesne','Zarf tümleci','Dolaylı tümleç (yer tamlayıcısı)'],a:3,e:'"Nereye?" sorusuna cevap verir.'},
+  {s:'Hangi yazım doğrudur?',o:['TDK\'nın','TDK\'nin','TDK\'nun','TDKnin'],a:1,e:'Kısaltmaya gelen ek okunuşa uyar: "te-de-ke" → TDK\'nin.'},
+  {s:'"Siyah" kelimesinin eş anlamlısı hangisidir?',o:['Beyaz','Kara','Koyu','Gri'],a:1,e:'Siyah ile kara eş anlamlıdır.'},
+  {s:'"Cömert" kelimesinin zıt anlamlısı hangisidir?',o:['Eli açık','Cimri','Zengin','Yardımsever'],a:1,e:'Cömertin zıddı cimridir.'},
+  {s:'"Öğretmen, öğrencilerin sorularını sabırla yanıtladı." cümlesinin öznesi hangisidir?',o:['Öğretmen','öğrencilerin','sorularını','sabırla'],a:0,e:'Yanıtlayan kim? Öğretmen.'},
+  {s:'"Kitap okumak hayal gücünü geliştirir, kelime dağarcığını zenginleştirir. Bu yüzden her gün biraz okumalıyız." Bu metnin ana düşüncesi nedir?',o:['Kitaplar pahalıdır.','Düzenli kitap okumak kişiye birçok fayda sağlar.','Sadece roman okunmalıdır.','Okumak zaman kaybıdır.'],a:1,e:'Metin okumanın faydalarını sayıp düzenli okumayı öneriyor.'},
+  {s:'"Güneş bize gülümsüyordu." cümlesinde hangi söz sanatı vardır?',o:['Benzetme','Kişileştirme','Abartma','Konuşturma'],a:1,e:'Güneşe insana ait gülümseme özelliği verilmiş.'},
+  {s:'"Kar gibi beyaz bir elbise giymişti." cümlesinde hangi söz sanatı vardır?',o:['Benzetme','Kişileştirme','Abartma','Karşıtlık'],a:0,e:'Elbisenin beyazlığı kara benzetilmiş ("gibi").'},
+  {s:'"Etekleri zil çalmak" deyiminin anlamı nedir?',o:['Çok üzülmek','Çok sevinmek','Çok yorulmak','Çok korkmak'],a:1,e:'Bu deyim büyük sevinç anlatır.'},
+  {s:'"Sınava hazırlanmak için erkenden kalktı." cümlesinde hangi anlam ilişkisi vardır?',o:['Sebep-sonuç','Amaç-sonuç','Koşul','Karşılaştırma'],a:1,e:'"için" burada amaç bildirir: amaç-sonuç.'}],
+ ink:[
+  {s:'Mustafa Kemal Samsun\'a hangi tarihte çıkmıştır?',o:['19 Mayıs 1919','23 Nisan 1920','30 Ağustos 1922','29 Ekim 1923'],a:0,e:'19 Mayıs 1919 Millî Mücadele\'nin başlangıcı kabul edilir.'},
+  {s:'Osmanlı Devleti\'nin I. Dünya Savaşı\'ndan yenik çekildiğini gösteren ateşkes antlaşması hangisidir?',o:['Mudanya','Mondros','Lozan','Gümrü'],a:1,e:'Mondros Ateşkes Antlaşması 30 Ekim 1918\'de imzalandı.'},
+  {s:'Manda ve himaye ilk kez hangi kongrede reddedilmiştir?',o:['Erzurum Kongresi','Sivas Kongresi','Balıkesir Kongresi','Alaşehir Kongresi'],a:0,e:'Erzurum Kongresi\'nde manda ve himaye kabul edilemez denildi.'},
+  {s:'Ulusal cemiyetlerin tek çatı altında birleştirildiği kongre hangisidir?',o:['Erzurum Kongresi','Sivas Kongresi','Amasya Görüşmeleri','Havza Genelgesi'],a:1,e:'Sivas Kongresi\'nde Anadolu ve Rumeli Müdafaa-i Hukuk Cemiyeti kuruldu.'},
+  {s:'Doğu Cephesi\'nde Ermenilerle imzalanan antlaşma hangisidir?',o:['Ankara','Moskova','Gümrü','Kars'],a:2,e:'Gümrü Antlaşması (1920), TBMM\'nin ilk askerî ve siyasi başarısıdır.'},
+  {s:'Lozan Barış Antlaşması hangi tarihte imzalanmıştır?',o:['11 Ekim 1922','24 Temmuz 1923','13 Ekim 1923','3 Mart 1924'],a:1,e:'Lozan, 24 Temmuz 1923\'te imzalandı.'},
+  {s:'Ankara hangi tarihte başkent ilan edilmiştir?',o:['23 Nisan 1920','13 Ekim 1923','29 Ekim 1923','1 Kasım 1922'],a:1,e:'Ankara, 13 Ekim 1923\'te başkent oldu.'},
+  {s:'3 Mart 1924\'te aşağıdakilerden hangisi gerçekleşmiştir?',o:['Saltanatın kaldırılması','Cumhuriyetin ilanı','Halifeliğin kaldırılması','Harf İnkılabı'],a:2,e:'Halifelik 3 Mart 1924\'te kaldırıldı; aynı gün Tevhid-i Tedrisat Kanunu çıktı.'},
+  {s:'Saltanat hangi tarihte kaldırılmıştır?',o:['1 Kasım 1922','29 Ekim 1923','3 Mart 1924','17 Şubat 1926'],a:0,e:'Saltanat 1 Kasım 1922\'de kaldırıldı.'},
+  {s:'Soyadı Kanunu hangi yıl çıkarılmıştır?',o:['1923','1926','1928','1934'],a:3,e:'Soyadı Kanunu 1934\'te kabul edildi.'},
+  {s:'Latin harflerine dayalı yeni Türk alfabesi hangi yıl kabul edilmiştir?',o:['1924','1926','1928','1934'],a:2,e:'Harf İnkılabı 1928\'de yapıldı.'},
+  {s:'Çanakkale Savaşı hangi savaşın bir cephesidir?',o:['Balkan Savaşları','I. Dünya Savaşı','Kurtuluş Savaşı','II. Dünya Savaşı'],a:1,e:'Çanakkale Cephesi I. Dünya Savaşı sırasında açıldı (1915).'},
+  {s:'Tevhid-i Tedrisat Kanunu ile ne yapılmıştır?',o:['Kadınlara seçme hakkı verildi.','Eğitim ve öğretim birleştirildi.','Saltanat kaldırıldı.','Soyadı zorunlu oldu.'],a:1,e:'Tüm okullar Millî Eğitim Bakanlığına bağlandı.'}],
+ din:[
+  {s:'Allah\'ın takdir ettiği şeylerin zamanı gelince gerçekleşmesine ne denir?',o:['Kader','Kaza','Ecel','Rızık'],a:1,e:'Takdir etme kader, gerçekleşme kazadır.'},
+  {s:'İnsanın hayatının sona ereceği, Allah tarafından bilinen vakte ne denir?',o:['Ecel','Rızık','Tevekkül','Nisap'],a:0,e:'Ecel, ömrün sona erdiği vakittir.'},
+  {s:'Zekât vermekle yükümlü olmak için sahip olunması gereken mal miktarına ne denir?',o:['Fitre','Nisap','Sadaka','Öşür'],a:1,e:'Bu ölçüye nisap denir.'},
+  {s:'Kur\'an-ı Kerim\'in son suresi (sıralamada) hangisidir?',o:['Fâtiha','İhlâs','Nâs','Felak'],a:2,e:'Mushaf sıralamasında son sure Nâs\'tır.'},
+  {s:'Kur\'an-ı Kerim hangi ayda indirilmeye başlanmıştır?',o:['Muharrem','Recep','Ramazan','Şaban'],a:2,e:'Ramazan ayındaki Kadir Gecesi\'nde inmeye başladı.'},
+  {s:'İlk inen ayetler hangi surededir?',o:['Fâtiha','Alak','Bakara','Kevser'],a:1,e:'İlk vahiy Alak suresinin ilk ayetleridir.'},
+  {s:'Hz. Muhammed\'e gençliğinde "güvenilir" anlamında hangi lakap verilmiştir?',o:['el-Emin','Sıddık','Faruk','Seyfullah'],a:0,e:'Dürüstlüğü nedeniyle Muhammedü\'l-Emin denirdi.'},
+  {s:'Hangisi sadaka-i cariyeye (hayrı sürekli devam eden sadaka) örnektir?',o:['Selam vermek','Okul yaptırmak','Oruç tutmak','Namaz kılmak'],a:1,e:'Okul, çeşme gibi uzun süre yararlanılan hayırlar sadaka-i cariyedir.'},
+  {s:'Hz. Muhammed\'e ilk vahiy hangi mağarada gelmiştir?',o:['Sevr','Hira','Uhud','Arafat'],a:1,e:'İlk vahiy Hira mağarasında geldi.'},
+  {s:'Kur\'an-ı Kerim kaç sureden oluşur?',o:['99','110','114','124'],a:2,e:'Kur\'an 114 sureden oluşur.'},
+  {s:'Malı ve nimetleri gereksiz yere harcamaya ne denir?',o:['Cimrilik','İsraf','Kanaat','Cömertlik'],a:1,e:'İsraf, nimetleri boşa harcamaktır.'},
+  {s:'Hz. Muhammed hangi yıl doğmuştur?',o:['571','610','622','632'],a:0,e:'571\'de doğdu; 610 ilk vahiy, 622 hicret, 632 vefat yılıdır.'},
+  {s:'Kur\'an-ı Kerim\'in indirilmeye başlandığı geceye ne ad verilir?',o:['Mevlit Kandili','Kadir Gecesi','Berat Kandili','Arefe'],a:1,e:'Kur\'an Kadir Gecesi\'nde indirilmeye başlandı.'}],
+ ing:[
+  {s:'"Can I speak to Mary, please?" Telefonda uygun cevap hangisidir?',o:['Hold on, please.','I\'m fine, thanks.','Nice to meet you.','See you.'],a:0,e:'"Hold on" = bekleyin, hatta kalın.'},
+  {s:'"I ___ the dishes every evening." Boşluğa hangisi gelir?',o:['make','do','take','have'],a:1,e:'Ev işlerinde "do the dishes" kalıbı kullanılır.'},
+  {s:'"Bungee jumping is ___ than playing chess." Boşluğa hangisi gelir?',o:['dangerous','more dangerous','most dangerous','dangerouser'],a:1,e:'Uzun sıfatlarda karşılaştırma "more ... than" ile yapılır.'},
+  {s:'"Paragliding is the ___ activity I have ever tried." Boşluğa hangisi gelir?',o:['more exciting','most exciting','excitinger','excited'],a:1,e:'Üstünlük derecesi: "the most ...".'},
+  {s:'"Download" kelimesinin Türkçesi nedir?',o:['Yüklemek (siteye)','İndirmek','Silmek','Paylaşmak'],a:1,e:'Download = indirmek, upload = yüklemek.'},
+  {s:'"My best friend is very ___. She always helps me." Boşluğa hangisi gelir?',o:['selfish','rude','supportive','lazy'],a:2,e:'Her zaman yardım eden arkadaş destekleyicidir: supportive.'},
+  {s:'"How often do you go to the cinema?" sorusunun uygun cevabı hangisidir?',o:['By bus.','Once a month.','With my sister.','At 7 p.m.'],a:1,e:'"How often" sıklık sorar.'},
+  {s:'"If you visit Istanbul, you ___ see the Galata Tower." Boşluğa hangisi gelir?',o:['should','didn\'t','was','are'],a:0,e:'Tavsiye vermek için "should" kullanılır.'},
+  {s:'"Flood" kelimesinin Türkçesi nedir?',o:['Deprem','Sel','Kuraklık','Çığ'],a:1,e:'Flood = sel. Avalanche = çığ, drought = kuraklık.'},
+  {s:'"Recipe" kelimesinin anlamı nedir?',o:['Fiş','Yemek tarifi','Mutfak','Malzeme'],a:1,e:'Recipe = yemek tarifi. Ingredients = malzemeler.'},
+  {s:'"I\'m afraid ___ heights." Boşluğa hangisi gelir?',o:['at','of','on','in'],a:1,e:'"be afraid of" kalıbı kullanılır.'},
+  {s:'"Scientists ___ a new vaccine last year." Boşluğa hangisi gelir?',o:['develop','develops','developed','developing'],a:2,e:'"last year" geçmiş zaman ister: developed.'},
+  {s:'"Can I leave a message?" cümlesinin anlamı nedir?',o:['Mesajını alabilir miyim?','Mesaj bırakabilir miyim?','Telefonu kapatabilir miyim?','Sonra arayabilir miyim?'],a:1,e:'Telefonda karşıdaki kişi yoksa söylenir.'}]};
+Object.keys(QB2).forEach(k=>QB[k].push(...QB2[k]));
+// Konu etiketleri (8. sınıf ünitelerine göre), soru sırasıyla
+const TOPICS={
+ mat:['Üslü ifadeler','Kareköklü ifadeler','Çarpanlar ve katlar','Olasılık','Cebirsel ifadeler ve özdeşlikler','Doğrusal denklemler','Üslü ifadeler',
+  'Üslü ifadeler','Kareköklü ifadeler','Çarpanlar ve katlar','Çarpanlar ve katlar','Olasılık','Cebirsel ifadeler ve özdeşlikler','Doğrusal denklemler','Doğrusal denklemler','Eşitsizlikler','Üçgenler','Geometrik cisimler','Üslü ifadeler','Kareköklü ifadeler'],
+ fen:['Mevsimler ve iklim','DNA ve genetik kod','Basınç','Madde ve endüstri','Basit makineler','Enerji dönüşümleri','Madde ve endüstri',
+  'DNA ve genetik kod','DNA ve genetik kod','Basınç','Madde ve endüstri','Madde ve endüstri','Basit makineler','Madde ve endüstri','Enerji dönüşümleri','Elektrik enerjisi','Mevsimler ve iklim','DNA ve genetik kod','Madde ve endüstri','Mevsimler ve iklim'],
+ tr:['Fiilimsiler','Sözcükte anlam','Yazım kuralları','Fiilimsiler','Deyimler ve atasözleri','Cümlenin ögeleri','Cümlede anlam',
+  'Fiilimsiler','Fiilimsiler','Cümlenin ögeleri','Cümlenin ögeleri','Yazım kuralları','Sözcükte anlam','Sözcükte anlam','Cümlenin ögeleri','Paragraf','Söz sanatları','Söz sanatları','Deyimler ve atasözleri','Cümlede anlam'],
+ ink:['Bir kahraman doğuyor','Millî uyanış','Millî uyanış','Ya istiklal ya ölüm','Millî uyanış','Ya istiklal ya ölüm','Çağdaşlaşan Türkiye',
+  'Millî uyanış','Millî uyanış','Millî uyanış','Millî uyanış','Ya istiklal ya ölüm','Ya istiklal ya ölüm','Çağdaşlaşan Türkiye','Çağdaşlaşan Türkiye','Çağdaşlaşan Türkiye','Çağdaşlaşan Türkiye','Çağdaşlaşan Türkiye','Bir kahraman doğuyor','Çağdaşlaşan Türkiye'],
+ din:['Zekât ve sadaka','Kur\'an-ı Kerim','Kader inancı','Hz. Muhammed\'in örnekliği','Zekât ve sadaka','Din ve hayat','Kader inancı',
+  'Kader inancı','Kader inancı','Zekât ve sadaka','Kur\'an-ı Kerim','Kur\'an-ı Kerim','Kur\'an-ı Kerim','Hz. Muhammed\'in örnekliği','Zekât ve sadaka','Hz. Muhammed\'in örnekliği','Kur\'an-ı Kerim','Zekât ve sadaka','Hz. Muhammed\'in örnekliği','Kur\'an-ı Kerim'],
+ ing:['Friendship','Friendship','In the kitchen','Teen life','Natural forces','Teen life','Teen life',
+  'On the phone','Chores','Adventures','Adventures','The Internet','Friendship','Teen life','Tourism','Natural forces','In the kitchen','Adventures','Science','On the phone']};
+Object.keys(QB).forEach(k=>QB[k].forEach((q,i)=>{q.t=TOPICS[k][i]||''}));
+function todaysQuiz(){const sd=daySeed();return SUBJ.map((s,i)=>({k:s.k,i:(sd+i*3)%QB[s.k].length}))}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+load();
+
+const pad=n=>String(n).padStart(2,'0');
+const dkey=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>dkey(new Date());
+const daysAgo=n=>{const d=new Date();d.setDate(d.getDate()-n);return dkey(d)};
+const net=(D,Y)=>D-Y/3;
+const fmt=n=>n.toFixed(2).replace('.',',');
+const level=xp=>Math.floor(Math.sqrt(xp/100))+1;
+const lvlXp=l=>100*(l-1)*(l-1);
+
+function toast(t){const el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2600)}
+
+function addXp(n,msg){const before=level(S.xp);S.xp+=n;save();const after=level(S.xp);
+  if(after>before){const r=S.rewards.find(r=>r.l===after);toast(`Seviye ${after}! `+(r?'Yeni ödül açıldı 🎁':'Harika gidiyorsun'))}
+  else if(msg)toast(msg)}
+
+function daysLeft(){const e=new Date(S.examDate+'T09:00');return Math.max(0,Math.ceil((e-new Date())/864e5))}
+function activeDays(){const s=new Set();S.sessions.forEach(x=>s.add(x.d));S.solves.forEach(x=>s.add(x.d));(S.denemeler||[]).forEach(x=>s.add(x.d));Object.keys(S.quiz||{}).forEach(d=>{if(Object.keys(S.quiz[d]).length)s.add(d)});return s}
+function streak(){const a=activeDays();let n=0,i=a.has(today())?0:1;while(a.has(daysAgo(i))){n++;i++}return n}
+
+function plan(){
+  const dl=daysLeft(),wd=new Date().getDay(),weekend=wd===0||wd===6;
+  let p,q;
+  if(dl>150){p=3;q=60}else if(dl>90){p=4;q=80}else if(dl>30){p=5;q=100}else{p=5;q=120}
+  if(weekend)p=Math.max(2,p-1);
+  const m=MOODS.find(x=>x.k===S.moods[today()]);
+  if(m&&m.light){p=Math.max(1,p-2);q=Math.round(q*0.6/10)*10}
+  return {p,q,weekend,deneme:weekend&&dl<=200&&!(m&&m.light),light:!!(m&&m.light)};
+}
+function todayStats(){const t=today();
+  const ses=S.sessions.filter(x=>x.d===t),sol=S.solves.filter(x=>x.d===t);
+  const den=(S.denemeler||[]).filter(x=>x.d===t).reduce((a,x)=>a+Object.values(x.per).reduce((u,p)=>u+p.d+p.y+p.b,0),0),qz=Object.keys(S.quiz?.[t]||{}).length;
+  return {pom:ses.length,q:sol.reduce((a,x)=>a+x.D+x.Y+x.B,0)+den+qz,big:sol.some(x=>x.D+x.Y+x.B>=90)||sol.reduce((a,x)=>a+x.D+x.Y+x.B,0)>=90}}
+function weekStats(){const days=[...Array(7)].map((_,i)=>daysAgo(6-i)),set=new Set(days);
+  const by={};SUBJ.forEach(s=>by[s.k]={m:0,q:0,n:0});
+  S.sessions.filter(x=>set.has(x.d)).forEach(x=>by[x.s].m+=x.m);
+  S.solves.filter(x=>set.has(x.d)).forEach(x=>{by[x.s].q+=x.D+x.Y+x.B;by[x.s].n+=net(x.D,x.Y)});
+  const perDay=days.map(d=>S.sessions.filter(x=>x.d===d).reduce((a,x)=>a+x.m,0));
+  return {days,by,perDay}}
+
+function render(){
+  document.getElementById('daysLeft').textContent=daysLeft();
+  const L=level(S.xp),lo=lvlXp(L),hi=lvlXp(L+1);
+  document.getElementById('lvlNum').textContent=L;
+  document.getElementById('lvlName').textContent=LEVELNAMES[Math.min(L,10)];
+  document.getElementById('xpText').textContent=`${S.xp} / ${hi} XP`;
+  document.getElementById('xpBar').style.width=((S.xp-lo)/(hi-lo)*100)+'%';
+  const nr=[...S.rewards].sort((a,b)=>a.l-b.l).find(r=>r.l>L);
+  document.getElementById('nextReward').textContent=nr?`Sonraki ödül seviye ${nr.l}: ${nr.t}`:'Tüm ödüller açıldı!';
+  const st=streak();document.getElementById('streak').textContent=st+' gün 🔥';
+  const act=activeDays(),gun=['Pz','Pt','Sa','Ça','Pe','Cu','Ct'];
+  document.getElementById('streakBubbles').innerHTML=[...Array(7)].map((_,i)=>{const k=daysAgo(6-i),d=new Date();d.setDate(d.getDate()-(6-i));
+    return `<div class="bub ${act.has(k)?'on':''} ${i===6?'today':''}" title="${k}">${gun[d.getDay()]}</div>`}).join('');
+
+  // goals
+  const P=plan(),T=todayStats();
+  document.getElementById('dayType').textContent=P.weekend?'Hafta sonu':'Okul günü';
+  const goals=[
+    {done:T.pom>=P.p,t:`${P.p} odak seansı (25 dk)`,s:`${T.pom}/${P.p} tamamlandı`},
+    {done:T.q>=P.q,t:`${P.q} soru çöz`,s:`${T.q}/${P.q} soru`}];
+  if(P.deneme)goals.push({done:T.big,t:'1 deneme sınavı (90 soru)',s:'Hafta sonu denemesi, sonucu Soru sekmesine yaz'});
+  document.getElementById('goals').innerHTML=goals.map(g=>`<div class="goal ${g.done?'done':''}"><div class="gb">${g.done?'✓':''}</div><div class="gt"><strong>${g.t}</strong><small>${g.s}</small></div></div>`).join('');
+  if(goals.every(g=>g.done)&&!S.bonus.includes(today())){S.bonus.push(today());addXp(50,'Günün tüm hedefleri tamam! +50 XP')}
+
+  // coach
+  const W=weekStats();
+  const weak=[...SUBJ].sort((a,b)=>(W.by[a.k].m+W.by[a.k].q)-(W.by[b.k].m+W.by[b.k].q))[0];
+  const dl=daysLeft();
+  let tip;
+  if(S.xp===0)tip=`<b>Hoş geldin!</b> İlk adım küçük olsun: bugün sadece 1 odak seansı yap. 25 dakika kimseye çok gelmez.`;
+  else if(T.pom===0&&T.q===0)tip=`<b>Bugün henüz başlamadın.</b> ${st>0?`${st} günlük serini bozma, `:''}sadece bir seans aç ve başla. Başlamak en zor kısım.`;
+  else tip=`<b>Bugün odak: ${weak.n}.</b> Bu hafta en az buna zaman ayırdın. Bir seansını ${weak.n}'e ver.`;
+  if(P.light&&S.xp>0)tip=`<b>Bugün hafif gün.</b> Hedefleri azalttım. Önce günün testini çöz, ısınmak için birebir. Sonra tek bir seans yeter.`;
+  else if(!(T.pom===0&&T.q===0)&&Object.keys(S.quiz[today()]||{}).length<SUBJ.length)tip+=` Günün testini de unutma, 6 soru +60 XP.`;
+  if(dl<=30)tip+=` Son ${dl} gün: yeni konu yerine bol tekrar ve deneme çöz.`;
+  document.getElementById('coach').innerHTML=tip;
+
+  // week chart
+  const max=Math.max(60,...W.perDay);
+  document.getElementById('weekChart').innerHTML=W.days.map((d,i)=>{const m=W.perDay[i],dt=new Date(d+'T12:00');
+    return `<div class="col"><span class="num">${m||''}</span><div class="b ${m?'':'zero'}" style="height:${Math.max(2,m/max*90)}%"></div><span>${gun[dt.getDay()]}</span></div>`}).join('');
+  document.getElementById('weekTotal').textContent=W.perDay.reduce((a,b)=>a+b,0)+' dk';
+  document.getElementById('subjTable').innerHTML=SUBJ.map(s=>{const b=W.by[s.k];return `<tr><td>${s.n}</td><td class="r num">${b.m}</td><td class="r num">${b.q}</td><td class="r num">${fmt(b.n)}</td></tr>`}).join('');
+
+  // solves
+  document.getElementById('solveList').innerHTML=S.solves.slice(-10).reverse().map(x=>`<tr><td class="num">${x.d.slice(8)}.${x.d.slice(5,7)}</td><td>${SN[x.s]}</td><td class="r num">${x.D}/${x.Y}/${x.B}</td><td class="r num">${fmt(net(x.D,x.Y))}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">Henüz kayıt yok. İlk testini çözünce buraya yaz.</td></tr>';
+
+  // rewards
+  document.getElementById('rewardList').innerHTML=[...S.rewards].sort((a,b)=>a.l-b.l).map((r,i)=>{
+    const open=L>=r.l,got=S.claimed.includes(r.l);
+    return `<div class="reward ${got?'got':open?'open':''}"><div class="lv">${got?'✓':r.l}</div><div class="rt"><input id="rw${r.l}" data-l="${r.l}" value="${r.t.replace(/"/g,'&quot;')}" aria-label="Seviye ${r.l} ödülü"><small class="muted">${got?'Alındı':open?'Açıldı!':`Seviye ${r.l}'de açılır`}</small></div>${open&&!got?`<button class="mini" data-claim="${r.l}">Aldım</button>`:''}</div>`}).join('');
+  const totalQ=S.solves.reduce((a,x)=>a+x.D+x.Y+x.B,0),totalM=S.sessions.reduce((a,x)=>a+x.m,0);
+  const badges=[
+    ['İlk adım','İlk odak seansını bitir',S.sessions.length>=1],
+    ['3 gün seri','3 gün üst üste çalış',st>=3],
+    ['Haftalık seri','7 gün üst üste çalış',st>=7],
+    ['500 soru','Toplam 500 soru çöz',totalQ>=500],
+    ['2000 soru','Toplam 2000 soru çöz',totalQ>=2000],
+    ['10 saat','Toplam 10 saat odaklan',totalM>=600],
+    ['Her dersten','Bu hafta 6 dersin hepsine çalış',SUBJ.every(s=>W.by[s.k].m+W.by[s.k].q>0)]];
+  document.getElementById('badgeList').innerHTML=badges.map(b=>`<div class="goal ${b[2]?'done':''}"><div class="gb">${b[2]?'★':''}</div><div class="gt"><strong>${b[0]}</strong><small>${b[1]}</small></div></div>`).join('');
+  document.getElementById('examDate').value=S.examDate;
+
+  // mood
+  const m=MOODS.find(x=>x.k===S.moods[today()]);
+  document.getElementById('moodEmoji').textContent=m?m.e:'🙂';
+  document.getElementById('moodTitle').textContent=m?`Bugün: ${m.n}`:'Bugün nasılsın?';
+  let mm=m?pick(m.msgs,daySeed()):'Nasıl hissettiğini söyle, hedeflerini ona göre ayarlayayım.';
+  const hard=[0,1,2,3].map(i=>S.moods[daysAgo(i)]).filter(k=>k==='stresli'||k==='isteksiz').length;
+  if(hard>=3)mm+=' Son günlerde zorlanıyorsun gibi görünüyor. Bunu annene, babana ya da güvendiğin biriyle konuşmak çok iyi gelir.';
+  document.getElementById('moodMsg').textContent=mm;
+  document.getElementById('moodChange').textContent=m?'Değiştir':'Seç';
+
+  // quiz
+  const ans=S.quiz[today()]||{};let correct=0,answered=0;
+  document.getElementById('quizList').innerHTML=todaysQuiz().map(({k,i})=>{
+    const q=QB[k][i],id=k,a=ans[id],done=a!==undefined;if(done){answered++;if(a===q.a)correct++}
+    return `<div class="q"><span class="label">${SN[k]}</span><div class="qs">${q.s}</div>${q.o.map((o,j)=>{
+      const cls=done?(j===q.a?'right':j===a?'wrong':''):'';
+      return `<button class="opt ${cls}" data-q="${id}" data-j="${j}" ${done?'disabled':''}><b>${'ABCD'[j]}</b><span>${o}</span></button>`}).join('')}
+      ${done?`<div class="expl">${a===q.a?'✓ Doğru! ':'✗ Doğru cevap '+'ABCD'[q.a]+'. '}${q.e}</div>`:''}</div>`}).join('');
+  document.getElementById('quizScore').textContent=`${correct}/${SUBJ.length}`+(answered<SUBJ.length?` · ${SUBJ.length-answered} kaldı`:'');
+  renderDeneme();
+}
+
+/* ---------- DENEME: seviye belirleme + kişisel denemeler ---------- */
+let sampleFn=null,genState='idle',genErr='',genCtl=null;
+Promise.resolve(window.claude?.use?.('sample')).then(f=>{sampleFn=f||null;renderDeneme()}).catch(()=>{});
+const lvlTag=v=>v==null?['–','']:v<40?['Geliştirilmeli','low']:v<70?['Orta','mid']:['İyi','high'];
+
+const bq=(k,i)=>{const q=QB[k][i];return {k,s:q.s,o:q.o,a:q.a,e:q.e,t:q.t,id:k+':'+i}};
+function placementQs(){const out=[];SUBJ.forEach(s=>[0,6,9,15].forEach(i=>out.push(bq(s.k,i))));return out}
+// konu zayıflığı: yanlış oranı + yanlış sayısı; hiç görülmemiş konu orta öncelik
+function topicWeak(k,t){const r=(S.topics||{})[k+'|'+t];if(!r)return 0.5;return (r.y+0.5)/(r.d+r.y+1)}
+// bankadan akıllı seçim: zayıf konular ve az görülen sorular önce
+function pickFrom(k,n,filterT){const seen=S.seen||{},sd=daySeed();
+  let idx=QB[k].map((q,i)=>i).filter(i=>!filterT||QB[k][i].t===filterT);
+  idx.sort((a,b)=>{const sa=topicWeak(k,QB[k][a].t)*2-(seen[k+':'+a]||0)*0.6+((a*7+sd)%10)/40;
+    const sb=topicWeak(k,QB[k][b].t)*2-(seen[k+':'+b]||0)*0.6+((b*7+sd)%10)/40;return sb-sa});
+  return idx.slice(0,n).map(i=>bq(k,i))}
+function localQs(){const out=[],c=counts();SUBJ.forEach(s=>out.push(...pickFrom(s.k,c[s.k])));return out}
+function topicQs(k,t){return pickFrom(k,6,t)}
+function markTopic(k,t,ok){if(!t)return;S.topics=S.topics||{};const r=S.topics[k+'|'+t]=S.topics[k+'|'+t]||{d:0,y:0};ok?r.d++:r.y++}
+function weakTopics(n){const list=Object.entries(S.topics||{}).map(([key,r])=>{const [k,t]=key.split('|');return {k,t,...r,rate:r.y/(r.d+r.y)}})
+  .filter(x=>x.y>0&&x.rate>=0.34).sort((a,b)=>b.rate-a.rate||b.y-a.y);return list.slice(0,n)}
+function weakHtml(withBtns){const w=weakTopics(5);
+  if(!w.length)return `<h2>Çalışman gereken konular</h2><p class="muted" style="margin:0">${Object.keys(S.topics||{}).length?'Şu an belirgin bir zayıf konun yok, harika! Böyle devam.':'Test ve deneme çözdükçe, yanlış yaptığın konular burada listelenecek.'}</p>`;
+  return `<h2>Çalışman gereken konular</h2><small class="muted">Yanlışlarına göre öncelik sırası. Önce konu anlatımını tekrar et, sonra o konudan soru çöz.</small>`+
+    w.map(x=>{const tot=x.d+x.y,pct=Math.round(x.rate*100),c=pct>=60?'low':'mid';
+    return `<div class="goal"><div class="gt"><strong>${esc(x.t)}</strong><small>${SN[x.k]} · ${tot} sorunun ${x.y} tanesi yanlış</small></div><span class="pill ${c}">%${pct} hata</span>${withBtns&&QB[x.k].some(q=>q.t===x.t)?`<button class="mini" style="background:var(--accent)" data-topic="${x.k}|${esc(x.t)}">Çöz</button>`:''}</div>`}).join('')}
+function counts(){const c={};SUBJ.forEach(s=>{const lv=S.level?.[s.k]??50;c[s.k]=lv<40?5:lv<70?3:2});return c}
+
+function startDeneme(kind,qs){S.cur={kind,date:today(),qs,ans:{},bad:{},done:false};save();render()}
+
+async function genAI(){
+  if(!sampleFn||genState==='busy')return;
+  const c=counts(),wrong=(S.wrongs||[]).slice(-12).map(w=>`- [${SN[w.k]}] ${w.s.slice(0,140)}`).join('\n')||'- (henüz yok)';
+  const lv=SUBJ.map(s=>`${s.n}: ${S.level?.[s.k]??'?'}`).join(', ');
+  const prompt=`Sen LGS (Türkiye 8. sınıf Liselere Geçiş Sınavı) için soru hazırlayan deneyimli bir öğretmensin. Aşağıdaki öğrenciye kişisel bir deneme hazırla.
+
+Öğrencinin ders seviyeleri (0-100, düşük = zayıf): ${lv}
+Son yanlış yaptığı sorular:
+${wrong}
+
+Yazılacak soru sayıları: ${SUBJ.map(s=>`${s.n} ${c[s.k]}`).join(', ')}.
+
+Kurallar:
+- 8. sınıf MEB müfredatına uygun, LGS tarzında, yorum ve akıl yürütme isteyen ÖZGÜN sorular yaz. Gerçek çıkmış soruları kopyalama.
+- Seviyesi düşük derslerde temel ve orta zorlukta, yüksek derslerde orta ve zor sorular yaz.
+- Yanlış yaptığı sorulara benzer konulardan (aynı soruyu tekrar etmeden) sorular ekle.
+- Görsel veya grafik gerektiren soru yazma. Gerekirse kısa bir tabloyu metin içinde yaz.
+- Her soruda tam 4 şık ve yalnızca bir doğru cevap olsun. Her soruyu yazdıktan sonra kendin çözerek doğruluğunu kontrol et; emin olmadığın soruyu yazma.
+- Din Kültürü sorularında MEB ders kitabı bilgisine bağlı kal. İngilizce sorularında şıklar İngilizce olabilir.
+
+Yalnızca bir JSON dizisi döndür, başka hiçbir metin yazma. Her öğe şu biçimde olsun:
+{"ders":"tr|mat|fen|ink|din|ing","konu":"kısa konu adı","s":"soru metni","o":["şık","şık","şık","şık"],"a":0,"e":"kısa çözüm açıklaması"}
+(a = doğru şıkkın 0'dan başlayan sırası)`;
+  genState='busy';genErr='';genCtl=new AbortController();renderDeneme();
+  try{
+    const data=await sampleFn.json(prompt,{modelTier:'complex',signal:genCtl.signal});
+    const qs=(Array.isArray(data)?data:[]).filter(q=>q&&SN[q.ders]&&typeof q.s==='string'&&Array.isArray(q.o)&&q.o.length===4&&Number.isInteger(q.a)&&q.a>=0&&q.a<4)
+      .map(q=>({k:q.ders,s:q.s,o:q.o.map(String),a:q.a,e:String(q.e||''),t:String(q.konu||'')}));
+    qs.sort((x,y)=>SUBJ.findIndex(s=>s.k===x.k)-SUBJ.findIndex(s=>s.k===y.k));
+    if(qs.length<6)throw{code:'invalid_json'};
+    genState='idle';startDeneme('ai',qs);
+  }catch(e){genState='idle';
+    genErr={cancelled:'',not_granted:'Claude kullanımına izin verilmedi. Yerel soru bankasından deneme çözebilirsin.',sampling_disabled:'Bu hesapta Claude kullanılamıyor. Yerel soru bankasından deneme çözebilirsin.',rate_limited:'Şu an çok yoğun. Biraz sonra tekrar dene.',invalid_json:'Deneme düzgün oluşmadı. Tekrar dene.',session_expired:'Claude oturumu kapanmış, tekrar giriş yap.'}[e?.code]??'Bir sorun oldu. Biraz sonra tekrar dene.';
+    if(e?.code==='not_granted'||e?.code==='sampling_disabled')sampleFn=null;
+    renderDeneme()}
+}
+
+function finishDeneme(){const c=S.cur;c.done=true;
+  const per={};SUBJ.forEach(s=>per[s.k]={d:0,y:0,b:0});let dc=0;S.wrongs=S.wrongs||[];
+  S.seen=S.seen||{};
+  c.qs.forEach((q,i)=>{if(q.id)S.seen[q.id]=(S.seen[q.id]||0)+1;if(c.bad[i])return;const a=c.ans[i],p=per[q.k];
+    if(a===undefined){p.b++;markTopic(q.k,q.t,false)}else if(a===q.a){p.d++;dc++;markTopic(q.k,q.t,true)}else{p.y++;S.wrongs.push({k:q.k,s:q.s});markTopic(q.k,q.t,false)}});
+  if(c.kind==='topic'){S.denemeler=S.denemeler||[];S.denemeler.push({d:c.date,kind:'topic',per});addXp(dc*10,`Konu testi bitti! ${dc}/${c.qs.length} doğru, +${dc*10} XP`);S.cur=null;save();render();return}
+  S.wrongs=S.wrongs.slice(-40);S.level=S.level||{};
+  SUBJ.forEach(s=>{const p=per[s.k],n=p.d+p.y+p.b;if(!n)return;const pct=Math.max(0,Math.round(net(p.d,p.y)/n*100));
+    S.level[s.k]=S.level[s.k]==null||c.kind==='placement'?pct:Math.round(S.level[s.k]*0.65+pct*0.35)});
+  S.denemeler=S.denemeler||[];S.denemeler.push({d:c.date,kind:c.kind,per});
+  if(c.kind==='placement')S.placed=true;
+  addXp(dc*10,`Deneme bitti! ${dc} doğru, +${dc*10} XP`);window.scrollTo({top:0,behavior:'smooth'});render()}
+
+function qHtml(q,i,c){const a=c.ans[i],done=c.done,bad=c.bad[i];
+  return `<div class="q ${bad?'flag':''}"><div class="row"><span class="label">${SN[q.k]}${q.t?' · '+esc(q.t):''}</span><span class="qnum">${i+1}/${c.qs.length}</span></div><div class="qs">${esc(q.s)}</div>${q.o.map((o,j)=>{
+    const cls=done?(j===q.a?'right':j===a?'wrong':''):(j===a?'sel':'');
+    return `<button class="opt ${cls}" data-dq="${i}" data-j="${j}" ${done?'disabled':''}><b>${'ABCD'[j]}</b><span>${esc(o)}</span></button>`}).join('')}
+    ${done?`<div class="expl">${bad?'Bu soru hatalı olarak işaretlendi, puana katılmadı. ':''}${a===undefined?'Boş bıraktın. ':a===q.a?'✓ Doğru! ':'✗ Doğru cevap '+'ABCD'[q.a]+'. '}${esc(q.e)}</div>`:''}
+    ${c.kind==='ai'&&!bad?`<button class="badq" data-bad="${i}">Bu soruda hata var</button>`:''}</div>`}
+const esc=t=>String(t).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+
+function renderDeneme(){
+  const box=document.getElementById('denemeBox'),lb=document.getElementById('levelBox');if(!box)return;
+  document.getElementById('weakToday').innerHTML=weakHtml(true);document.getElementById('weakTest').innerHTML=weakHtml(true);
+  if(S.level){lb.hidden=false;lb.innerHTML=`<div class="row"><h2>Seviyen</h2><span class="label">${(S.denemeler||[]).length} deneme</span></div>`+SUBJ.map(s=>{const v=S.level[s.k],[t,c]=lvlTag(v);
+    return `<div class="lvrow"><span>${s.n}</span><div class="bar"><i style="width:${v??0}%"></i></div><span class="pill ${c}">${t}</span></div>`}).join('')}
+  const c=S.cur;
+  // devam eden deneme
+  if(c&&!c.done){const n=Object.keys(c.ans).length;
+    box.innerHTML=`<div class="row"><h2>${c.kind==='placement'?'Seviye belirleme denemesi':c.kind==='topic'?'Konu testi: '+esc(c.qs[0]?.t||''):'Kişisel deneme'}</h2><span class="num muted">${n}/${c.qs.length}</span></div>
+      <small class="muted">Bilmediğin soruyu boş bırak; 3 yanlış 1 doğruyu götürür. Bitince doğru cevaplar ve açıklamalar görünür.</small>
+      ${c.qs.map((q,i)=>qHtml(q,i,c)).join('')}<button class="btn" id="finishBtn">Denemeyi bitir</button>`;return}
+  // sonuç ekranı (bugün bitti)
+  if(c&&c.done&&c.date===today()){const last=S.denemeler[S.denemeler.length-1];
+    const rows=SUBJ.filter(s=>last.per[s.k].d+last.per[s.k].y+last.per[s.k].b>0).map(s=>{const p=last.per[s.k];return `<tr><td>${s.n}</td><td class="r num">${p.d}/${p.y}/${p.b}</td><td class="r num">${fmt(net(p.d,p.y))}</td></tr>`}).join('');
+    const weak=SUBJ.filter(s=>S.level[s.k]!=null).sort((a,b)=>S.level[a.k]-S.level[b.k])[0];
+    box.innerHTML=`<h2>Bugünkü deneme tamamlandı 🎉</h2><div style="overflow-x:auto"><table><thead><tr><th>Ders</th><th class="r">D/Y/B</th><th class="r">Net</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="tip">Yarın, bu sonuçlara göre <b>${weak?weak.n:'zayıf'}</b> dersinden daha fazla soru içeren yeni bir deneme hazırlanacak.</div>
+      <details><summary class="label" style="cursor:pointer">Soruları ve çözümleri göster</summary>${c.qs.map((q,i)=>qHtml(q,i,c)).join('')}</details>`;return}
+  // seviye belirleme henüz yok
+  if(!S.placed){box.innerHTML=`<h2>Seviye belirleme denemesi</h2><p class="muted" style="margin:0">Her dersten 4 soru, toplam 24 soru. Sonuca göre hangi derste güçlü, hangisinde zayıf olduğunu göreceğiz ve yarından itibaren denemelerin sana göre hazırlanacak.</p><button class="btn" id="placeBtn">Denemeye başla</button>`;return}
+  // yeni günlük deneme
+  if(genState==='busy'){box.innerHTML=`<h2>Kişisel deneme hazırlanıyor</h2><p class="muted" style="margin:0"><span class="spin"></span>Claude seviyene göre soruları yazıyor ve kontrol ediyor. Bu 1-3 dakika sürebilir, sayfayı kapatma.</p><button class="btn ghost" id="stopGen">Vazgeç</button>`;return}
+  const cn=counts(),tot=Object.values(cn).reduce((a,b)=>a+b,0);
+  box.innerHTML=`<h2>Bugünün kişisel denemesi</h2><p class="muted" style="margin:0">Seviyene göre ${tot} soru: ${SUBJ.map(s=>`${s.n} ${cn[s.k]}`).join(', ')}. Zayıf derslerden ve yanlış yaptığın konulardan daha çok soru gelir.</p>
+    ${genErr?`<div class="tip">${genErr}</div>`:''}
+    <div class="btns">${sampleFn?`<button class="btn" id="aiBtn">Claude ile yeni deneme oluştur</button>`:''}<button class="btn ${sampleFn?'ghost':''}" id="localBtn">${sampleFn?'Soru bankasından çöz':'Bugünün denemesine başla'}</button></div>
+    ${sampleFn?'<small class="muted">Claude her gün yeni ve sana özel sorular yazar. Soru bankası ise hazır, kontrol edilmiş sorulardan seçer.</small>':''}`;
+}
+
+document.addEventListener('click',e=>{const t=e.target.closest('[data-topic]');if(!t)return;
+  if(S.cur&&!S.cur.done){toast('Önce devam eden denemeyi bitir');return}
+  const [k,tp]=t.dataset.topic.split('|');const qs=topicQs(k,tp);if(!qs.length)return;
+  startDeneme('topic',qs);document.querySelector('[data-tab=quiz]').click();window.scrollTo({top:0,behavior:'smooth'})});
+document.getElementById('denemeBox').addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
+  if(t.id==='placeBtn')return startDeneme('placement',placementQs());
+  if(t.id==='aiBtn')return genAI();
+  if(t.id==='localBtn')return startDeneme('local',localQs());
+  if(t.id==='stopGen'){genCtl?.abort();return}
+  if(t.id==='finishBtn'){const n=Object.keys(S.cur.ans).length;
+    if(n<S.cur.qs.length&&t.dataset.sure!=='1'){t.dataset.sure='1';t.textContent=`${S.cur.qs.length-n} soru boş. Yine de bitir`;return}
+    return finishDeneme()}
+  if(t.dataset.bad!==undefined){S.cur.bad[+t.dataset.bad]=true;save();toast(S.cur.done?'Teşekkürler, bu soru hatalı olarak işaretlendi':'Teşekkürler, bu soru puana katılmayacak');return renderDeneme()}
+  if(t.dataset.dq!==undefined&&!S.cur.done){const i=+t.dataset.dq,j=+t.dataset.j;
+    if(S.cur.ans[i]===j)delete S.cur.ans[i];else S.cur.ans[i]=j;save();
+    const y=window.scrollY;renderDeneme();window.scrollTo(0,y)}});
+
+// mood modal
+function showMood(){const h=new Date().getHours();
+  document.getElementById('greet').textContent=h<12?'Günaydın ☀️':h<18?'İyi günler':'İyi akşamlar 🌙';
+  document.getElementById('moodBtns').innerHTML=MOODS.map(m=>`<button class="mood" type="button" data-m="${m.k}"><span>${m.e}</span>${m.n}</button>`).join('');
+  document.getElementById('moodModal').hidden=false;}
+document.getElementById('moodBtns').onclick=e=>{const b=e.target.closest('[data-m]');if(!b)return;
+  const first=!S.moods[today()];S.moods[today()]=b.dataset.m;save();document.getElementById('moodModal').hidden=true;
+  const m=MOODS.find(x=>x.k===b.dataset.m);
+  if(first)addXp(5,m.light?'Hedeflerini hafiflettim. Küçük adımlar da sayılır 💪':'Harika! Hadi başlayalım 🚀');render()};
+document.getElementById('moodChange').onclick=showMood;
+
+// quiz answers
+document.getElementById('quizList').addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b||b.disabled)return;
+  const k=b.dataset.q,j=+b.dataset.j,t=today();S.quiz[t]=S.quiz[t]||{};if(S.quiz[t][k]!==undefined)return;
+  S.quiz[t][k]=j;const q=QB[k][todaysQuiz().find(x=>x.k===k).i];markTopic(k,q.t,j===q.a);
+  if(j===q.a)addXp(10,'Doğru! +10 XP');else{save();toast('Olsun, açıklamayı oku. Hatadan öğrenmek de kazanç.')}
+  render()});
+
+// tabs
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  document.querySelectorAll('.tabpane').forEach(p=>{const on=p.id==='tab-'+b.dataset.tab;p.hidden=!on;if(on)p.style.display='flex'});
+});
+
+// subject chips
+let focusS='mat',solveS='mat';
+function chips(id,get,set){const el=document.getElementById(id);
+  const draw=()=>el.innerHTML=SUBJ.map(s=>`<button type="button" class="chip" aria-pressed="${s.k===get()}" data-k="${s.k}">${s.n}</button>`).join('');
+  el.onclick=e=>{const k=e.target.dataset.k;if(k){set(k);draw()}};draw()}
+chips('focusSubj',()=>focusS,k=>focusS=k);
+chips('solveSubj',()=>solveS,k=>solveS=k);
+
+// timer
+const FOCUS=25*60,BREAK=5*60;let mode='focus',endAt=null,remain=FOCUS,tick=null,wake=null,actx=null;
+const arc=document.getElementById('ringArc');
+function beep(){try{actx=actx||new AudioContext();[0,.25,.5].forEach(t=>{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;g.gain.value=.15;o.connect(g);g.connect(actx.destination);o.start(actx.currentTime+t);o.stop(actx.currentTime+t+.15)})}catch(e){}}
+function drawTimer(){const tot=mode==='focus'?FOCUS:BREAK;
+  document.getElementById('timer').textContent=pad(Math.floor(remain/60))+':'+pad(remain%60);
+  document.getElementById('phase').textContent=mode==='focus'?'Odak zamanı · '+SN[focusS]:'Mola';
+  arc.style.strokeDashoffset=282.7*(1-remain/tot);}
+function stop(){clearInterval(tick);tick=null;endAt=null;document.getElementById('startBtn').textContent='Devam';try{wake&&wake.release()}catch(e){}}
+async function start(){if(tick)return stop();
+  try{actx=actx||new AudioContext()}catch(e){}
+  try{wake=await navigator.wakeLock.request('screen')}catch(e){}
+  endAt=Date.now()+remain*1000;document.getElementById('startBtn').textContent='Duraklat';
+  tick=setInterval(()=>{remain=Math.max(0,Math.round((endAt-Date.now())/1000));drawTimer();
+    if(remain===0){clearInterval(tick);tick=null;beep();
+      if(mode==='focus'){S.sessions.push({d:today(),s:focusS,m:25});addXp(50,'Seans tamam! +50 XP. Şimdi 5 dakika mola.');mode='break';remain=BREAK}
+      else{toast('Mola bitti, hazırsan yeni seansa başla');mode='focus';remain=FOCUS}
+      document.getElementById('startBtn').textContent='Başlat';drawTimer();render()}},500);}
+document.getElementById('startBtn').onclick=start;
+document.getElementById('resetBtn').onclick=()=>{stop();mode='focus';remain=FOCUS;document.getElementById('startBtn').textContent='Başlat';drawTimer()};
+drawTimer();
+
+// solve form
+const iv=id=>Math.max(0,parseInt(document.getElementById(id).value)||0);
+['inD','inY','inB'].forEach(id=>document.getElementById(id).oninput=()=>document.getElementById('netPrev').textContent=fmt(net(iv('inD'),iv('inY'))));
+document.getElementById('solveForm').addEventListener('submit',e=>{e.preventDefault();
+  const D=iv('inD'),Y=iv('inY'),B=iv('inB');if(D+Y+B===0)return toast('Önce doğru, yanlış veya boş sayısını yaz');
+  S.solves.push({d:today(),s:solveS,D,Y,B});
+  const gain=Math.max(1,Math.round(net(D,Y)*2));
+  e.target.reset();document.getElementById('netPrev').textContent='0,00';
+  addXp(gain,`Kaydedildi: ${fmt(net(D,Y))} net, +${gain} XP`);render()});
+
+// rewards edit / claim
+document.getElementById('rewardList').addEventListener('change',e=>{const l=+e.target.dataset.l;if(!l)return;
+  const r=S.rewards.find(r=>r.l===l);if(r){r.t=e.target.value.trim()||r.t;save();toast('Ödül güncellendi');render()}});
+document.getElementById('rewardList').addEventListener('click',e=>{const l=+e.target.dataset.claim;if(!l)return;
+  S.claimed.push(l);save();toast('Ödülünün tadını çıkar! 🎉');render()});
+document.getElementById('examDate').onchange=e=>{if(e.target.value){S.examDate=e.target.value;save();render();toast('Sınav tarihi güncellendi')}};
+
+render();
+if(!S.moods[today()])showMood();
+setInterval(()=>{render();if(!S.moods[today()]&&document.getElementById('moodModal').hidden)showMood()},60000);
+</script>
+
+<script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
+</body></html>
